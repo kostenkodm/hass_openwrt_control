@@ -1,0 +1,165 @@
+title: OpenWrt VPN
+views:
+- title: Управление
+  path: vpn
+  icon: mdi:vpn
+  cards:
+  - type: markdown
+    content: '## OpenWrt VPN — интеграция Home Assistant
+
+      **Тестовый стенд.** Сущности и управление работают через настоящую интеграцию
+      HA; роутер, проверки VPN и применение Podkop заменены локальным HTTPS ubus-симулятором.
+
+
+      **С чего начать:** в карточке **main** выберите `vpn_b`. В режиме наблюдения
+      изменится заданная политика и предлагаемый VPN; применённый останется `vpn_a`.
+      Карточки **media** и **custom** не должны измениться.
+
+
+      Для применения в симуляторе: **[Настройки интеграции](/config/integrations/integration/openwrt_vpn)**
+      → Настроить → Общие параметры → режим `control`. Затем снова выберите VPN либо
+      `Auto`. Для Auto также включите автоматику.
+
+
+      `inbound_vpn` защищён и отсутствует в списке исходящих VPN. Секции media/custom
+      приведены для проверки независимости и не обнаружены на реальном роутере.'
+  - type: entities
+    title: Контроллер
+    show_header_toggle: false
+    entities:
+    - entity: binary_sensor.openwrt_vpn_controller_controller_connection
+      name: Связь с контроллером
+    - entity: switch.openwrt_vpn_controller_automatic_vpn_selection
+      name: Автоматический выбор VPN
+    - entity: sensor.openwrt_vpn_controller_operating_mode
+      name: Режим работы
+    - entity: button.openwrt_vpn_controller_diagnose_vpn
+      name: Запросить диагностику
+  - type: entities
+    title: Секция main
+    show_header_toggle: false
+    entities:
+    - entity: select.openwrt_vpn_controller_main_policy
+      name: Заданная политика / VPN
+    - entity: sensor.openwrt_vpn_controller_main_applied_vpn
+      name: Применённый VPN
+    - entity: sensor.openwrt_vpn_controller_main_proposed_vpn
+      name: Предлагаемый VPN
+    - entity: sensor.openwrt_vpn_controller_main_application_state
+      name: Результат применения
+    - entity: sensor.openwrt_vpn_controller_main_switch_reason
+      name: Причина решения
+    - entity: sensor.openwrt_vpn_controller_main_last_switch
+      name: Последнее переключение
+    - entity: binary_sensor.openwrt_vpn_controller_main_all_candidates_unavailable
+      name: Все кандидаты недоступны
+  - type: entities
+    title: Секция custom
+    show_header_toggle: false
+    entities:
+    - entity: select.openwrt_vpn_controller_custom_policy
+      name: Заданная политика / VPN
+    - entity: sensor.openwrt_vpn_controller_custom_applied_vpn
+      name: Применённый VPN
+    - entity: sensor.openwrt_vpn_controller_custom_proposed_vpn
+      name: Предлагаемый VPN
+    - entity: sensor.openwrt_vpn_controller_custom_application_state
+      name: Результат применения
+    - entity: sensor.openwrt_vpn_controller_custom_switch_reason
+      name: Причина решения
+    - entity: sensor.openwrt_vpn_controller_custom_last_switch
+      name: Последнее переключение
+    - entity: binary_sensor.openwrt_vpn_controller_custom_all_candidates_unavailable
+      name: Все кандидаты недоступны
+  - type: entities
+    title: Секция media
+    show_header_toggle: false
+    entities:
+    - entity: select.openwrt_vpn_controller_media_policy
+      name: Заданная политика / VPN
+    - entity: sensor.openwrt_vpn_controller_media_applied_vpn
+      name: Применённый VPN
+    - entity: sensor.openwrt_vpn_controller_media_proposed_vpn
+      name: Предлагаемый VPN
+    - entity: sensor.openwrt_vpn_controller_media_application_state
+      name: Результат применения
+    - entity: sensor.openwrt_vpn_controller_media_switch_reason
+      name: Причина решения
+    - entity: sensor.openwrt_vpn_controller_media_last_switch
+      name: Последнее переключение
+    - entity: binary_sensor.openwrt_vpn_controller_media_all_candidates_unavailable
+      name: Все кандидаты недоступны
+- title: Состояние VPN
+  path: health
+  icon: mdi:heart-pulse
+  cards:
+  - type: entities
+    title: vpn_a
+    show_header_toggle: false
+    entities:
+    - entity: binary_sensor.openwrt_vpn_controller_vpn_a_vpn_available
+      name: VPN доступен
+    - entity: sensor.openwrt_vpn_controller_vpn_a_latency
+      name: Задержка
+    - entity: sensor.openwrt_vpn_controller_vpn_a_successful_checks
+      name: Успешные проверки
+    - entity: binary_sensor.openwrt_vpn_controller_vpn_a_http_test
+      name: HTTP-проверка
+    - entity: sensor.openwrt_vpn_controller_vpn_a_external_ip
+      name: Внешний IP (смоделирован)
+  - type: entities
+    title: vpn_b
+    show_header_toggle: false
+    entities:
+    - entity: binary_sensor.openwrt_vpn_controller_vpn_b_vpn_available
+      name: VPN доступен
+    - entity: sensor.openwrt_vpn_controller_vpn_b_latency
+      name: Задержка
+    - entity: sensor.openwrt_vpn_controller_vpn_b_successful_checks
+      name: Успешные проверки
+    - entity: binary_sensor.openwrt_vpn_controller_vpn_b_http_test
+      name: HTTP-проверка
+    - entity: sensor.openwrt_vpn_controller_vpn_b_external_ip
+      name: Внешний IP (смоделирован)
+  - type: entities
+    title: vpn_c
+    show_header_toggle: false
+    entities:
+    - entity: binary_sensor.openwrt_vpn_controller_vpn_c_vpn_available
+      name: VPN доступен
+    - entity: sensor.openwrt_vpn_controller_vpn_c_latency
+      name: Задержка
+    - entity: sensor.openwrt_vpn_controller_vpn_c_successful_checks
+      name: Успешные проверки
+    - entity: binary_sensor.openwrt_vpn_controller_vpn_c_http_test
+      name: HTTP-проверка
+    - entity: sensor.openwrt_vpn_controller_vpn_c_external_ip
+      name: Внешний IP (смоделирован)
+- title: История и ограничения
+  path: details
+  icon: mdi:history
+  cards:
+  - type: markdown
+    content: '## Что проверяет прототип
+
+      - Политика и фактически назначенный VPN показаны отдельно.
+
+      - Выбор в одной секции не меняет ручные политики других.
+
+      - Auto выбирает из кандидатов своей секции; выключение глобальной автоматики
+      сохраняет назначения.
+
+      - История решений находится в атрибутах сущности «Последние события».
+
+
+      Проверки реального выхода, отсутствие утечек и транзакции настоящего Podkop
+      ещё требуют нативного OpenWrt-контроллера и отдельного стенда.'
+  - type: entities
+    title: Службы и история
+    entities:
+    - entity: sensor.openwrt_vpn_controller_podkop_status
+      name: Podkop (смоделирован)
+    - entity: sensor.openwrt_vpn_controller_sing_box_status
+      name: sing-box (смоделирован)
+    - entity: sensor.openwrt_vpn_controller_recent_events
+      name: Последние события — нажмите для атрибутов

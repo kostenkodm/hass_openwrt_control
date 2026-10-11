@@ -1,0 +1,14 @@
+{
+  "domain": "openwrt_vpn",
+  "name": "OpenWrt VPN Controller (prototype)",
+  "version": "0.1.0",
+  "config_flow": true,
+  "documentation": "https://github.com/kostenkodm/hass_openwrt_control",
+  "issue_tracker": "https://github.com/kostenkodm/hass_openwrt_control/issues",
+  "codeowners": [
+    "@kostenkodm"
+  ],
+  "iot_class": "local_polling",
+  "integration_type": "hub",
+  "requirements": []
+}

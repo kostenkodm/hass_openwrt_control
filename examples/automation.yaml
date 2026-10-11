@@ -1,0 +1,23 @@
+# Example for a test HA. Event IDs can be used for durable notification deduplication.
+alias: "OpenWrt VPN — событие контроллера"
+triggers:
+  - trigger: event
+    event_type: openwrt_vpn_event
+    event_data:
+      type: all_unavailable
+  - trigger: event
+    event_type: openwrt_vpn_event
+    event_data:
+      type: apply_error
+  - trigger: event
+    event_type: openwrt_vpn_event
+    event_data:
+      type: controller_lost
+actions:
+  - action: persistent_notification.create
+    data:
+      title: "OpenWrt VPN"
+      message: >-
+        {{ trigger.event.data.type }}:
+        {{ trigger.event.data.get('section_id', 'controller') }}
+mode: queued

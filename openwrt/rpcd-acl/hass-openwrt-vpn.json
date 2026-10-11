@@ -1,0 +1,28 @@
+{
+  "hass-openwrt-vpn": {
+    "description": "Limited controller API; native controller not included in prototype 0.1",
+    "read": {
+      "ubus": {
+        "vpn.controller": [
+          "capabilities",
+          "status",
+          "sections",
+          "vpns",
+          "history",
+          "operation"
+        ]
+      }
+    },
+    "write": {
+      "ubus": {
+        "vpn.controller": [
+          "set_automation",
+          "configure",
+          "set_policy",
+          "assign_vpn",
+          "diagnose"
+        ]
+      }
+    }
+  }
+}

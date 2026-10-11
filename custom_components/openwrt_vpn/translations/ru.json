@@ -1,0 +1,218 @@
+{
+  "title": "OpenWrt VPN Controller",
+  "config": {
+    "step": {
+      "reauth_confirm": {
+        "title": "Подключение контроллера",
+        "description": "Прототип: управление проверено с локальным симулятором. HTTPS и проверка сертификата обязательны. Вставьте PEM тестового CA либо оставьте поле пустым для системного хранилища доверия.",
+        "data": {
+          "endpoint": "HTTPS ubus URL",
+          "username": "RPC-пользователь",
+          "password": "Пароль",
+          "ca_pem": "Доверенный CA (PEM)"
+        }
+      },
+      "reconfigure": {
+        "title": "Подключение контроллера",
+        "description": "Прототип: управление проверено с локальным симулятором. HTTPS и проверка сертификата обязательны. Вставьте PEM тестового CA либо оставьте поле пустым для системного хранилища доверия.",
+        "data": {
+          "endpoint": "HTTPS ubus URL",
+          "username": "RPC-пользователь",
+          "password": "Пароль",
+          "ca_pem": "Доверенный CA (PEM)"
+        }
+      },
+      "controller": {
+        "title": "Подключение контроллера",
+        "description": "Прототип: управление проверено с локальным симулятором. HTTPS и проверка сертификата обязательны. Вставьте PEM тестового CA либо оставьте поле пустым для системного хранилища доверия.",
+        "data": {
+          "endpoint": "HTTPS ubus URL",
+          "username": "RPC-пользователь",
+          "password": "Пароль",
+          "ca_pem": "Доверенный CA (PEM)"
+        }
+      },
+      "user": {
+        "title": "OpenWrt VPN Controller",
+        "menu_options": {
+          "demo": "Демонстрационный режим",
+          "controller": "Подключить контроллер по HTTPS"
+        }
+      },
+      "demo": {
+        "title": "Демонстрационный режим",
+        "description": "Создаёт 52 сущности для трёх секций и трёх VPN прямо в Home Assistant. Данные и переключения смоделированы. Роутер не подключается. Начальный режим — observe, автоматика выключена. Настройки → Устройства и службы → OpenWrt VPN → устройство Demo: здесь доступны сущности. В параметрах интеграции доступны сценарии отказа и восстановления. Демонстрация работает только пока запущен HA."
+      }
+    },
+    "error": {
+      "invalid_auth": "Ошибка RPC-авторизации.",
+      "cannot_connect": "Не удалось подключиться. Проверьте URL, CA, имя в сертификате и доступность."
+    },
+    "abort": {
+      "already_configured": "Этот контроллер уже подключён.",
+      "unique_id_mismatch": "Это другой контроллер.",
+      "reauth_successful": "Подключение обновлено.",
+      "reconfigure_successful": "Подключение обновлено.",
+      "demo_already_configured": "Демонстрация уже добавлена.",
+      "demo_no_connection": "Демонстрации не нужны реквизиты роутера. Для контроллера добавьте отдельную интеграцию."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Настройки контроллера",
+        "menu_options": {
+          "general": "Общие параметры",
+          "section": "Политика секции",
+          "demo_scenario": "Демонстрационные сценарии"
+        }
+      },
+      "general": {
+        "title": "Режим и интервалы",
+        "description": "observe сохраняет политики без применения. control разрешён только для симулятора; реальные Podkop и firewall недоступны.",
+        "data": {
+          "run_mode": "Режим",
+          "poll_interval": "Опрос HA, секунд",
+          "probe_interval": "Проверки контроллера, секунд",
+          "failure_cycles": "Циклов до отказа",
+          "quorum": "Успешных ресурсов из трёх",
+          "min_hold": "Удержание VPN, секунд"
+        }
+      },
+      "section": {
+        "title": "Выбор секции",
+        "data": {
+          "section_id": "Секция"
+        }
+      },
+      "section_policy": {
+        "title": "Независимая политика секции",
+        "description": "Кандидаты: имена через запятую, в порядке приоритета. Предпочтения: JSON-объект VPN → число от -10 до 10.",
+        "data": {
+          "mode": "Политика",
+          "vpn": "Ручной VPN",
+          "candidates": "Кандидаты по приоритету",
+          "algorithm": "Алгоритм",
+          "return_policy": "Возврат: after_hold / sticky",
+          "quality_margin": "Гистерезис качества",
+          "preferences": "Предпочтения (JSON)"
+        }
+      },
+      "demo_scenario": {
+        "title": "Демонстрационные сценарии",
+        "description": "Изменяет только синтетические проверки. Для переключения: режим control, автоматика включена, нужная секция в Auto. Ручные политики остальных секций сохраняются. Ошибка проверки действует на следующее применение; в observe изменений назначения нет.",
+        "data": {
+          "scenario": "Сценарий"
+        }
+      }
+    },
+    "error": {
+      "command_failed": "Настройки не применены. Обновите состояние и проверьте историю."
+    },
+    "abort": {
+      "no_sections": "Нет управляемых VPN-секций.",
+      "demo_unavailable": "Демонстрация недоступна.",
+      "demo_scenario_applied": "Сценарий выполнен. Посмотрите состояния секций и историю устройства."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "podkop_status": {
+        "name": "Состояние Podkop"
+      },
+      "sing_box_status": {
+        "name": "Состояние sing-box"
+      },
+      "run_mode": {
+        "name": "Режим работы",
+        "state": {
+          "observe": "Наблюдение",
+          "control": "Управление"
+        }
+      },
+      "history": {
+        "name": "Последние события"
+      },
+      "applied_vpn": {
+        "name": "{resource}: применённый VPN"
+      },
+      "application_state": {
+        "name": "{resource}: состояние применения",
+        "state": {
+          "simulated": "Применено в симуляторе",
+          "pending": "Ожидает применения",
+          "pending_observe": "Предложено — режим наблюдения",
+          "automation_paused": "Автоматика приостановлена",
+          "rolled_back": "Выполнен откат",
+          "recovery_required": "Требуется восстановление"
+        }
+      },
+      "reason": {
+        "name": "{resource}: причина переключения"
+      },
+      "last_switch": {
+        "name": "{resource}: последнее переключение"
+      },
+      "latency_ms": {
+        "name": "{resource}: задержка"
+      },
+      "success_percent": {
+        "name": "{resource}: успешные проверки"
+      },
+      "last_handshake": {
+        "name": "{resource}: последний handshake"
+      },
+      "rx_bytes": {
+        "name": "{resource}: принято"
+      },
+      "tx_bytes": {
+        "name": "{resource}: передано"
+      },
+      "external_ip": {
+        "name": "{resource}: внешний IP"
+      },
+      "proposed_vpn": {
+        "name": "{resource}: предлагаемый VPN"
+      }
+    },
+    "binary_sensor": {
+      "controller_available": {
+        "name": "Связь с контроллером"
+      },
+      "available": {
+        "name": "{resource}: VPN доступен"
+      },
+      "http_test": {
+        "name": "{resource}: HTTP-проверка"
+      },
+      "all_unavailable": {
+        "name": "{resource}: все VPN недоступны"
+      }
+    },
+    "select": {
+      "policy": {
+        "name": "{resource}: политика"
+      }
+    },
+    "switch": {
+      "automation": {
+        "name": "Автоматический выбор VPN"
+      }
+    },
+    "button": {
+      "diagnose": {
+        "name": "Диагностика VPN"
+      }
+    }
+  },
+  "selector": {
+    "demo_scenario": {
+      "options": {
+        "vpn_a_down": "vpn_a недоступен",
+        "all_down": "Все VPN недоступны",
+        "recover": "Восстановить все VPN",
+        "verify_failure": "Ошибка проверки следующего применения"
+      }
+    }
+  }
+}

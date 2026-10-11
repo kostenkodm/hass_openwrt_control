@@ -1,0 +1,5 @@
+homeassistant==2026.10.1
+pytest
+pytest-asyncio
+cryptography
+ruff

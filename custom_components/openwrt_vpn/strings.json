@@ -1,0 +1,218 @@
+{
+  "title": "OpenWrt VPN Controller",
+  "config": {
+    "step": {
+      "reauth_confirm": {
+        "title": "Connect controller",
+        "description": "Prototype: control is tested with a local simulator. HTTPS certificate verification is mandatory. Paste the test CA PEM or leave it empty to use system trust.",
+        "data": {
+          "endpoint": "HTTPS ubus URL",
+          "username": "RPC username",
+          "password": "Password",
+          "ca_pem": "Trusted CA (PEM)"
+        }
+      },
+      "reconfigure": {
+        "title": "Connect controller",
+        "description": "Prototype: control is tested with a local simulator. HTTPS certificate verification is mandatory. Paste the test CA PEM or leave it empty to use system trust.",
+        "data": {
+          "endpoint": "HTTPS ubus URL",
+          "username": "RPC username",
+          "password": "Password",
+          "ca_pem": "Trusted CA (PEM)"
+        }
+      },
+      "controller": {
+        "title": "Connect controller",
+        "description": "Prototype: control is tested with a local simulator. HTTPS certificate verification is mandatory. Paste the test CA PEM or leave it empty to use system trust.",
+        "data": {
+          "endpoint": "HTTPS ubus URL",
+          "username": "RPC username",
+          "password": "Password",
+          "ca_pem": "Trusted CA (PEM)"
+        }
+      },
+      "user": {
+        "title": "OpenWrt VPN Controller",
+        "menu_options": {
+          "demo": "Demonstration mode",
+          "controller": "Connect controller over HTTPS"
+        }
+      },
+      "demo": {
+        "title": "Demonstration mode",
+        "description": "Creates 52 entities for three sections and three VPNs inside Home Assistant. All data and changes are simulated; no router is connected. Starts in observe mode with automation off. Open the integration device Demo to inspect entities; use integration options for failure and recovery scenarios. This demo runs only while HA is running."
+      }
+    },
+    "error": {
+      "invalid_auth": "RPC authentication failed.",
+      "cannot_connect": "Cannot connect. Check the URL, CA, certificate hostname and reachability."
+    },
+    "abort": {
+      "already_configured": "Controller already configured.",
+      "unique_id_mismatch": "This is a different controller.",
+      "reauth_successful": "Connection updated.",
+      "reconfigure_successful": "Connection updated.",
+      "demo_already_configured": "Demo is already configured.",
+      "demo_no_connection": "Demo requires no router credentials. Add a separate entry to connect a controller."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Controller options",
+        "menu_options": {
+          "general": "General settings",
+          "section": "Section policy",
+          "demo_scenario": "Demo scenarios"
+        }
+      },
+      "general": {
+        "title": "Mode and intervals",
+        "description": "observe stores policies without applying. control is enabled only for the simulator; real Podkop and firewall control is unavailable.",
+        "data": {
+          "run_mode": "Mode",
+          "poll_interval": "HA polling, seconds",
+          "probe_interval": "Controller checks, seconds",
+          "failure_cycles": "Failure cycles",
+          "quorum": "Successful resources out of three",
+          "min_hold": "VPN minimum hold, seconds"
+        }
+      },
+      "section": {
+        "title": "Choose section",
+        "data": {
+          "section_id": "Section"
+        }
+      },
+      "section_policy": {
+        "title": "Independent section policy",
+        "description": "Candidates: comma-separated names in priority order. Preferences: JSON object mapping VPN to a number from -10 to 10.",
+        "data": {
+          "mode": "Policy",
+          "vpn": "Manual VPN",
+          "candidates": "Candidates in priority order",
+          "algorithm": "Algorithm",
+          "return_policy": "Return: after_hold / sticky",
+          "quality_margin": "Quality hysteresis",
+          "preferences": "Preferences (JSON)"
+        }
+      },
+      "demo_scenario": {
+        "title": "Demo scenarios",
+        "description": "Changes synthetic checks only. To see failover, select control mode, enable automation and set the desired section to Auto. Other manual policies stay in place. Verification failure affects the next apply; observe mode keeps assignments unchanged.",
+        "data": {
+          "scenario": "Scenario"
+        }
+      }
+    },
+    "error": {
+      "command_failed": "Settings were not applied. Refresh state and inspect history."
+    },
+    "abort": {
+      "no_sections": "No managed VPN sections.",
+      "demo_unavailable": "Demo unavailable.",
+      "demo_scenario_applied": "Scenario applied. Inspect section states and device history."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "podkop_status": {
+        "name": "Podkop status"
+      },
+      "sing_box_status": {
+        "name": "sing-box status"
+      },
+      "run_mode": {
+        "name": "Operating mode",
+        "state": {
+          "observe": "Observe",
+          "control": "Control"
+        }
+      },
+      "history": {
+        "name": "Recent events"
+      },
+      "applied_vpn": {
+        "name": "{resource} applied VPN"
+      },
+      "application_state": {
+        "name": "{resource} application state",
+        "state": {
+          "simulated": "Applied in simulator",
+          "pending": "Pending",
+          "pending_observe": "Proposed — observe mode",
+          "automation_paused": "Automation paused",
+          "rolled_back": "Rolled back",
+          "recovery_required": "Recovery required"
+        }
+      },
+      "reason": {
+        "name": "{resource} switch reason"
+      },
+      "last_switch": {
+        "name": "{resource} last switch"
+      },
+      "latency_ms": {
+        "name": "{resource} latency"
+      },
+      "success_percent": {
+        "name": "{resource} successful checks"
+      },
+      "last_handshake": {
+        "name": "{resource} last handshake"
+      },
+      "rx_bytes": {
+        "name": "{resource} received traffic"
+      },
+      "tx_bytes": {
+        "name": "{resource} sent traffic"
+      },
+      "external_ip": {
+        "name": "{resource} external IP"
+      },
+      "proposed_vpn": {
+        "name": "{resource} proposed VPN"
+      }
+    },
+    "binary_sensor": {
+      "controller_available": {
+        "name": "Controller connection"
+      },
+      "available": {
+        "name": "{resource} VPN available"
+      },
+      "http_test": {
+        "name": "{resource} HTTP test"
+      },
+      "all_unavailable": {
+        "name": "{resource} all candidates unavailable"
+      }
+    },
+    "select": {
+      "policy": {
+        "name": "{resource} policy"
+      }
+    },
+    "switch": {
+      "automation": {
+        "name": "Automatic VPN selection"
+      }
+    },
+    "button": {
+      "diagnose": {
+        "name": "Diagnose VPN"
+      }
+    }
+  },
+  "selector": {
+    "demo_scenario": {
+      "options": {
+        "vpn_a_down": "vpn_a unavailable",
+        "all_down": "All VPNs unavailable",
+        "recover": "Recover all VPNs",
+        "verify_failure": "Fail verification of next apply"
+      }
+    }
+  }
+}
