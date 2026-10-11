@@ -5,7 +5,7 @@
 set -e
 [ "$#" = 3 ] || exit 2
 stage="$1"; output="$2"; probes="$3"
-# The exact 0.7.23 script dispatch starts here. Strip dispatch, not functions.
+# The pinned 0.7.23 and 0.7.24 script dispatch starts here. Strip dispatch, not functions.
 sed '/^case "\$1" in/,$d' /usr/bin/podkop > "$stage/podkop-functions.sh"
 . "$stage/podkop-functions.sh"
 config_load "$stage/podkop"

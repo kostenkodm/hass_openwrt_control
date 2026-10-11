@@ -5,9 +5,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 sdk="${OPENWRT_SDK:-$PWD/work/openwrt-sdk}"
 name=hass-openwrt-vpn-controller
-version=0.2.0-r1
+version=0.2.2-r1
 arch=aarch64_cortex-a53
-out="$PWD/outputs/podkop-0.2.0"
+out="$PWD/outputs/podkop-0.2.2"
 apk="$sdk/staging_dir/host/bin/apk"
 if [ "${1:-}" = --pack-root ]; then
     stage="$2"
@@ -35,7 +35,7 @@ stage="$(mktemp -d "$PWD/work/package-root-XXXXXX")"
 cp -a openwrt/files/. "$stage/"
 mkdir -p "$stage/usr/share/rpcd/acl.d" "$stage/usr/share/licenses/$name" "$stage/lib/apk/packages"
 cp openwrt/rpcd-acl/hass-openwrt-vpn.json "$stage/usr/share/rpcd/acl.d/"
-cp openwrt/podkop-0.7.23.sha256.json "$stage/usr/share/vpn-controller/podkop-hashes.json"
+cp openwrt/podkop-hashes.json "$stage/usr/share/vpn-controller/podkop-hashes.json"
 cp LICENSE "$stage/usr/share/licenses/$name/LICENSE"
 export STAGING_DIR="$sdk/staging_dir"
 "$compiler" -Os -fPIE -pie -fstack-protector-strong -D_FORTIFY_SOURCE=2 -Wall -Wextra -Werror \

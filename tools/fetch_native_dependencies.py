@@ -60,7 +60,8 @@ def main():
     for name, item in lock["downloads"].items():
         if "sdk" not in name or args.sdk:
             download(folder, name, item)
-    checkout(ROOT / "work/references/podkop-0.7.23", lock["podkop"])
+    for version, item in lock["podkop_versions"].items():
+        checkout(ROOT / f"work/references/podkop-{version}", item)
     if args.sources:
         for name, item in lock["sources"].items():
             checkout(ROOT / "work/native-locked-src" / name, item, name == "uci")

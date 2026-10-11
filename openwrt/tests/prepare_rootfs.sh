@@ -2,6 +2,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 root="$PWD/work/native-rootfs"
+export PODKOP_TEST_VERSION="${PODKOP_TEST_VERSION:-0.7.24}"
+case "$PODKOP_TEST_VERSION" in 0.7.23|0.7.24) ;; *) echo 'Unsupported Podkop fixture'; exit 1 ;; esac
 mkdir -p "$root"
 if [ ! -f "$root/bin/busybox" ]; then
     [ -z "$(find "$root" -mindepth 1 -maxdepth 1 -print -quit)" ] || { echo 'Existing lab rootfs is incomplete'; exit 1; }
@@ -10,10 +12,10 @@ fi
 /usr/bin/python3 openwrt/tests/confine_rootfs.py
 mkdir -p "$root/etc/vpn-controller" "$root/usr/share/vpn-controller" "$root/usr/libexec" "$root/usr/lib/podkop" "$root/etc/sing-box" "$root/tmp/sing-box/rulesets" "$root/var/run/vpn-controller"
 cp -a openwrt/files/. "$root/"
-cp openwrt/podkop-0.7.23.sha256.json "$root/usr/share/vpn-controller/podkop-hashes.json"
-cp work/references/podkop-0.7.23/podkop/files/usr/bin/podkop "$root/usr/bin/podkop"
-cp work/references/podkop-0.7.23/podkop/files/usr/lib/* "$root/usr/lib/podkop/"
-sed -i 's/__COMPILED_VERSION_VARIABLE__/0.7.23/' "$root/usr/lib/podkop/constants.sh"
+cp openwrt/podkop-hashes.json "$root/usr/share/vpn-controller/podkop-hashes.json"
+cp work/references/podkop-$PODKOP_TEST_VERSION/podkop/files/usr/bin/podkop "$root/usr/bin/podkop"
+cp work/references/podkop-$PODKOP_TEST_VERSION/podkop/files/usr/lib/* "$root/usr/lib/podkop/"
+sed -i "s/__COMPILED_VERSION_VARIABLE__/$PODKOP_TEST_VERSION/" "$root/usr/lib/podkop/constants.sh"
 tar -xzf work/native-downloads/sing-box.tar.gz -C work/native-downloads
 cp work/native-downloads/sing-box-1.12.17-linux-amd64/sing-box "$root/usr/bin/sing-box"
 gcc -static -O2 -Wall -Wextra -Werror openwrt/src/io.c -o "$root/usr/libexec/vpn-controller-io"

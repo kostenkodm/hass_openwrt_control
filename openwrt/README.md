@@ -1,9 +1,10 @@
-# Нативный контроллер Podkop 0.7.23
+# Нативный контроллер Podkop 0.7.23 / 0.7.24
 
-Экспериментальный пакет `hass-openwrt-vpn-controller` версии 0.2.0.
+Экспериментальный пакет `hass-openwrt-vpn-controller` версии 0.2.2.
 
 - `files/usr/sbin/vpn-controller.uc` — ограниченный объект ubus `vpn.controller`, очередь запросов, отдельный автономный worker.
 - `files/usr/share/vpn-controller/core.uc` — независимые политики секций, Manual/Auto, приоритет/качество, удержание, история и дедупликация.
+- `files/usr/share/vpn-controller/egress.uc` — проверка публичного IPv4 и согласия HTTPS-ответов для динамических адресов.
 - `files/usr/share/vpn-controller/platform.uc` — настоящее UCI, привязанные HTTPS-пробы, применение и откат.
 - `files/usr/libexec/vpn-controller-podkop-render` — адаптер штатного генератора. Не выполняет `podkop reload`, не изменяет nft или rule sets.
 - `src/io.c` — атомарная запись, fsync и запуск фиксированных argv с ограничением времени; в RPC не экспортируется.

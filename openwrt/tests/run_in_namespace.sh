@@ -73,6 +73,7 @@ chroot "$root" /usr/libexec/vpn-controller-podkop-render /tmp/initial /etc/sing-
 chroot "$root" /usr/bin/sing-box check -c /etc/sing-box/config.json
 chroot "$root" /etc/init.d/sing-box reload
 chroot "$root" /usr/bin/ucode /tests/integration.uc
+chroot "$root" /usr/bin/ucode /tests/dynamic_integration.uc
 
 chroot "$root" /usr/bin/ucode /usr/sbin/vpn-controller.uc > work/native-daemon.log 2>&1 &
 chroot "$root" /usr/sbin/uhttpd -f -s 127.0.0.1:18443 -C /etc/vpn-controller/tls/server.pem -K /etc/vpn-controller/tls/server.key -h /tmp/empty -u /ubus > work/native-uhttpd.log 2>&1 &

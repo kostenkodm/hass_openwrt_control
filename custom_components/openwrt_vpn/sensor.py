@@ -44,6 +44,8 @@ class ControllerSensor(ControllerEntity, SensorEntity):
     @property
     def extra_state_attributes(self):
         attrs = super().extra_state_attributes
+        if self.resource_group == "vpns":
+            attrs["approved"] = self.resource.get("approved") is True
         if self.key == "history":
             attrs["events"] = self.coordinator.events
         if self.key in ("rx_bytes", "tx_bytes", "last_handshake"):

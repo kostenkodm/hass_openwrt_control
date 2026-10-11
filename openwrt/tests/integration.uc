@@ -5,6 +5,17 @@ import {engine,check} from '../usr/share/vpn-controller/core.uc';
 const bus=connect();
 const p=platform(json(fs.readfile('/etc/vpn-controller/config.json')),bus);
 check(p.ready(),'preflight_failed'); print('PASS real OpenWrt preflight\n');
+let wrong = json(fs.readfile('/etc/vpn-controller/config.json'));
+wrong.lab_acceptance = 'podkop-9.9.9-ipv4';
+check(!platform(wrong,bus).ready(),'mismatched_version_acceptance');
+print('PASS mismatched Podkop acceptance token denied\n');
+const hash_path = '/usr/lib/podkop/sing_box_config_manager.sh';
+let original = fs.readfile(hash_path);
+fs.writefile(hash_path,original + '\n# unapproved generator change\n');
+let changed_ready = p.ready();
+fs.writefile(hash_path,original);
+check(!changed_ready && p.ready(),'modified_generator_accepted');
+print('PASS modified Podkop generator denied; original hash accepted\n');
 const c=engine(p,null); c.sample_all();
 let seq=0;
 function command(method,args) {

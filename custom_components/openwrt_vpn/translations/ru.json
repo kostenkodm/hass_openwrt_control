@@ -187,6 +187,9 @@
       },
       "all_unavailable": {
         "name": "{resource}: все VPN недоступны"
+      },
+      "up": {
+        "name": "{resource}: интерфейс поднят"
       }
     },
     "select": {

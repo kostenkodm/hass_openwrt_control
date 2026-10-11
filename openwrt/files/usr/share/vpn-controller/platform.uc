@@ -2,6 +2,7 @@
 import * as fs from 'fs';
 import { cursor } from 'uci';
 import { check, copy, ident } from './core.uc';
+import { public_ipv4, agreed_ip } from './egress.uc';
 
 export function platform(config, bus) {
     // Paths and resources come only from a root-owned local file, never RPC.
@@ -77,7 +78,15 @@ export function platform(config, bus) {
         }
         check(length(keys(hosts)) >= 3,'local_config_error');
     }
-    function request(resource, binding, expected) {
+    function egress_policy(policy, list) {
+        check(policy.egress_mode == null || policy.egress_mode in ['allowlist','dynamic'],'local_config_error');
+        if (policy.egress_mode == 'dynamic') {
+            let hosts = {};
+            for (let r in list) if (r.egress == true && r.scheme == 'https') hosts[lc(r.host)] = true;
+            check(length(keys(hosts)) >= 2,'local_config_error');
+        } else check(type(policy.egress_ips) == 'array' && length(policy.egress_ips) > 0,'local_config_error');
+    }
+    function request(resource, binding, policy) {
         let body = volatile + '/probe.body'; fs.unlink(body);
         let args = ['/usr/bin/curl','--disable','--silent','--show-error','--fail','--ipv4',
             '--noproxy','*','--proto','=http,https','--max-time','4','--connect-timeout','2',
@@ -90,7 +99,8 @@ export function platform(config, bus) {
         let response = run(args,5000), content = trim(fs.readfile(body) || ''); fs.unlink(body);
         let metrics = match(trim(response.text),/([0-9]{3}) ([0-9.]+)$/);
         let ok = response.rc == 0 && metrics && +metrics[1] >= 200 && +metrics[1] < 300;
-        let ip = resource.egress == true && ok && content in expected ? content : null;
+        let ip = resource.egress == true && ok && (policy.egress_mode == 'dynamic' ?
+            resource.scheme == 'https' && public_ipv4(content) : content in policy.egress_ips) ? content : null;
         return {ok, ip, latency_ms:ok ? +metrics[2] * 1000 : null};
     }
     function probe(vpns, sections, settings) {
@@ -101,20 +111,21 @@ export function platform(config, bus) {
             let lists = {global:config.resources}, responses = {};
             for (let sid, s in sections) lists[sid] = resources(sid);
             for (let sid, list in lists) {
-                validate_resources(list); let pass = 0, ip = null;
+                validate_resources(list); egress_policy(policy,list); let pass = 0, echoes = [];
                 for (let i = 0; i < length(list); i++) {
                     let key = sprintf('%J',list[i]);
                     if (!exists(responses,key)) responses[key] = meta.up && meta.device == vpn ?
-                        request(list[i],{device:meta.device},policy.egress_ips) : {ok:false};
+                        request(list[i],{device:meta.device},policy) : {ok:false};
                     let result = responses[key];
                     if (sid == 'global') {
                         checks['resource_' + i] = result.ok;
                         if (result.ok) { sum += result.latency_ms; count++; }
-                        if (result.ip) external_ip = result.ip;
                     }
                     if (result.ok) pass++;
-                    if (result.ip) ip = result.ip;
+                    push(echoes,{host:list[i].host,ip:result.ip});
                 }
+                let ip = agreed_ip(echoes,policy.egress_mode == 'dynamic');
+                if (sid == 'global') external_ip = ip;
                 if (sid != 'global') section_checks[sid] = pass >= (settings?.quorum || 2) && ip != null;
             }
             samples[vpn] = {checks,egress:external_ip != null,external_ip,
@@ -127,15 +138,21 @@ export function platform(config, bus) {
         }
         return samples;
     }
+    function podkop_version() {
+        let v = run(['/usr/bin/podkop','show_version']);
+        return v.rc == 0 ? trim(v.text) : '';
+    }
     function version_ok() {
-        let hashes = json(fs.readfile('/usr/share/vpn-controller/podkop-hashes.json') || '{}');
+        let manifest = json(fs.readfile('/usr/share/vpn-controller/podkop-hashes.json') || '{}');
+        let version = podkop_version();
+        if (!(version in ['0.7.23','0.7.24'])) return false;
+        let hashes = manifest[version] || {};
         if (!length(keys(hashes))) return false;
         for (let path, expected in hashes) {
             let result = run(['/usr/bin/sha256sum','/' + path]);
             if (result.rc || substr(result.text,0,64) != expected) return false;
         }
-        let v = run(['/usr/bin/podkop','show_version']);
-        return v.rc == 0 && trim(v.text) == '0.7.23';
+        return true;
     }
     function guard() {
         // No network/firewall mutation. Require existing interception intact.
@@ -173,7 +190,7 @@ export function platform(config, bus) {
             type(source_names) == 'array' && length(source_names) > 0 &&
             !length(filter(source_names,n => !ident(n))) &&
             config.control_enabled == true && config.exclusive_podkop_writer == true &&
-            config.lab_acceptance == 'podkop-0.7.23-ipv4' && version_ok() && guard();
+            config.lab_acceptance == 'podkop-' + podkop_version() + '-ipv4' && version_ok() && guard();
     }
     function stage(targets, directory) {
         fs.mkdir(directory,0700); fs.mkdir(directory + '/delta',0700);
@@ -244,13 +261,24 @@ export function platform(config, bus) {
             if (load().get('podkop',sid,'interface') != vpn) return false;
             let outbound = filter(actual.outbounds,o => o.tag == sid + '-out');
             if (length(outbound) != 1 || outbound[0].bind_interface != vpn) return false;
-            let pass=0, ip=null;
-            for (let r in resources(sid)) {
-                let result = request(r,{port:ports[sid]},local_policy(vpn).egress_ips);
-                if (result.ok) pass++; if (result.ip) ip=result.ip;
+            let pass=0, echoes=[], direct=[], policy=local_policy(vpn), list=resources(sid);
+            validate_resources(list); egress_policy(policy,list);
+            let dynamic = policy.egress_mode == 'dynamic', meta = discover().vpns[vpn];
+            if (dynamic && (!meta?.up || meta.device != vpn)) return false;
+            for (let r in list) {
+                let result = request(r,{port:ports[sid]},policy);
+                if (result.ok) pass++;
+                push(echoes,{host:r.host,ip:result.ip});
+                // Compare the actual section route to fresh device-bound probes.
+                // No learning from WAN, cached IP or the previous VPN assignment.
+                if (dynamic && r.egress == true) {
+                    let bound = request(r,{device:meta.device},policy);
+                    push(direct,{host:r.host,ip:bound.ip});
+                }
             }
+            let ip = agreed_ip(echoes,dynamic);
             let quorum = json(fs.readfile(base + '/state.json') || '{}').settings?.quorum || 2;
-            if (pass < quorum || !ip) return false;
+            if (pass < quorum || !ip || dynamic && agreed_ip(direct,true) != ip) return false;
         }
         return true;
     }
@@ -379,8 +407,8 @@ export function platform(config, bus) {
         date:() => trim(run(['/bin/date','-u','+%Y-%m-%dT%H:%M:%SZ']).text),
         service_status:() => ({podkop_status:guard() ? 'active' : 'unverified',
             sing_box_status:bus.call('service','list',{name:'sing-box'})?.['sing-box'] ? 'running' : 'unknown'}),
-        capabilities:() => ({experimental:true, protected_interfaces:protected_names,
+        capabilities:() => ({experimental:true, controller_version:'0.2.2', dynamic_egress:true, protected_interfaces:protected_names,
             vpn_restart:config.restart_enabled == true && ready(), last_handshake:false, control_disabled_reason:
             config.control_enabled ? 'local_preflight_required' : 'disabled_in_local_config',
-            supported_podkop:'0.7.23', ipv4_only:true})};
+            supported_podkop:['0.7.23','0.7.24'], ipv4_only:true})};
 };

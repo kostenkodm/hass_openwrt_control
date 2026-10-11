@@ -21,7 +21,7 @@ class ControllerEntity(CoordinatorEntity):
             name="OpenWrt VPN — Demo" if coordinator.config_entry.data.get("demo") else "OpenWrt VPN Controller",
             manufacturer="hass_openwrt_control",
             model="Local simulator" if coordinator.capabilities.get("simulated") else "OpenWrt VPN Controller",
-            sw_version="prototype 0.2.0",
+            sw_version=coordinator.capabilities.get("controller_version"),
         )
 
     @property

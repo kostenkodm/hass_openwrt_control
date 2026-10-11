@@ -256,3 +256,75 @@ async def test_restart_button_preserves_policies_and_local_permissions(hass, lab
     with pytest.raises(HomeAssistantError, match="not locally permitted"):
         await c.command("restart_vpn", {"vpn": "vpn_a"})
     assert lab["engine"].data["revision"] == revision
+
+
+async def test_discovered_unapproved_policy_is_visible_without_authorizing_writes(hass, lab, monkeypatch):
+    import pytest
+    from homeassistant.exceptions import HomeAssistantError
+    for vpn in lab["engine"].data["vpns"].values():
+        vpn["approved"] = False
+    lab["engine"].data["sections"]["main"]["policy"]["candidates"] = []
+    entry = await add_controller(hass, lab)
+    coordinator = entry.runtime_data
+    selection = entity_id(hass, entry, "select", "sections", "main", "policy")
+    state = hass.states.get(selection)
+    assert state.state == "vpn_a"
+    assert state.attributes["options"] == ["vpn_a"]
+    assert state.attributes["auto_ready"] is False
+    assert state.attributes["approved_vpns"] == []
+
+    async def forbidden(*args, **kwargs):
+        raise AssertionError("A displayed existing assignment must not authorize writes")
+    monkeypatch.setattr(coordinator.client, "mutate", forbidden)
+    await hass.services.async_call("select", "select_option",
+                                  {"entity_id": selection, "option": "vpn_a"}, blocking=True)
+    from custom_components.openwrt_vpn.select import SectionSelect
+    entity = SectionSelect(coordinator, "main")
+    for option in ("Auto", "vpn_b"):
+        with pytest.raises(HomeAssistantError, match="approved locally"):
+            await entity.async_select_option(option)
+
+    lab["engine"].data["vpns"]["vpn_b"]["approved"] = True
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get(selection).attributes["options"] == ["vpn_a", "vpn_b"]
+    assert hass.states.get(selection).state == "vpn_a"
+
+
+async def test_device_does_not_report_integration_version_as_router_firmware(hass, lab):
+    from homeassistant.helpers import device_registry as dr
+    entry = await add_controller(hass, lab)
+    device = dr.async_get(hass).async_get_device_by_identifier((DOMAIN, entry.unique_id), entry.entry_id)
+    assert device.sw_version is None
+    dr.async_get(hass).async_update_device(device.id, sw_version="prototype 0.1.0")
+    await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert dr.async_get(hass).async_get(device.id).sw_version is None
+
+
+async def test_interface_link_visible_before_local_approval_and_health_checks(hass, lab):
+    for vpn in lab["engine"].data["vpns"].values():
+        vpn.update(approved=False, up=True, protocol="amneziawg", device=vpn["id"])
+    entry = await add_controller(hass, lab)
+    ident = entity_id(hass, entry, "binary_sensor", "vpns", "vpn_a", "up")
+    assert hass.states.get(ident).state == "on"
+    assert hass.states.get(ident).attributes["approved"] is False
+    assert hass.states.get(ident).attributes["protocol"] == "amneziawg"
+    lab["engine"].data["vpns"]["vpn_a"]["up"] = False
+    await entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get(ident).state == "off"
+
+
+async def test_auto_seeds_only_locally_approved_candidates_after_discovery(hass, lab):
+    engine = lab["engine"]
+    engine.data["sections"]["main"]["policy"]["candidates"] = []
+    engine.data["vpns"]["vpn_c"]["approved"] = False
+    entry = await add_controller(hass, lab)
+    selection = entity_id(hass, entry, "select", "sections", "main", "policy")
+    assert "Auto" in hass.states.get(selection).attributes["options"]
+    await hass.services.async_call("select", "select_option",
+                                  {"entity_id": selection, "option": "Auto"}, blocking=True)
+    policy = entry.runtime_data.data["sections"]["main"]["policy"]
+    assert policy["mode"] == "auto"
+    assert policy["candidates"] == ["vpn_a", "vpn_b"]

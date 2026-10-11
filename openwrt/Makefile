@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 PKG_NAME:=hass-openwrt-vpn-controller
-PKG_VERSION:=0.2.0
+PKG_VERSION:=0.2.2
 PKG_RELEASE:=1
 PKG_LICENSE:=MIT
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
@@ -30,7 +30,7 @@ define Package/$(PKG_NAME)/install
 	$(CP) ./files/* $(1)/
 	$(INSTALL_DIR) $(1)/usr/share/rpcd/acl.d $(1)/usr/share/vpn-controller $(1)/usr/libexec $(1)/usr/share/licenses/$(PKG_NAME)
 	$(INSTALL_DATA) ./rpcd-acl/hass-openwrt-vpn.json $(1)/usr/share/rpcd/acl.d/
-	$(INSTALL_DATA) ./podkop-0.7.23.sha256.json $(1)/usr/share/vpn-controller/podkop-hashes.json
+	$(INSTALL_DATA) ./podkop-hashes.json $(1)/usr/share/vpn-controller/podkop-hashes.json
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/vpn-controller-io $(1)/usr/libexec/
 	$(INSTALL_DATA) ./LICENSE $(1)/usr/share/licenses/$(PKG_NAME)/LICENSE
 	chmod 0755 $(1)/usr/share/vpn-controller/vpn-controller.init $(1)/usr/sbin/vpn-controller.uc $(1)/usr/libexec/vpn-controller-podkop-render

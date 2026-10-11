@@ -26,7 +26,7 @@ def test_rpc_profile_trust_permissions_and_no_overwrite(tmp_path, capsys):
     assert "listen_http '" not in uhttpd and "0.0.0.0" not in uhttpd and "[::]" not in uhttpd
     context = ssl.create_default_context(cafile=str(output / "ca.pem"))
     assert context.verify_mode == ssl.CERT_REQUIRED and context.check_hostname
-    verification = [shutil.which("openssl"), "verify", "-CAfile", str(output / "ca.pem"),
+    verification = [shutil.which("openssl"), "verify", "-x509_strict", "-CAfile", str(output / "ca.pem"),
                     "-verify_hostname", "router.test", str(output / "server.pem")]
     assert subprocess.run(verification, capture_output=True).returncode == 0
     verification[-2] = "wrong.test"

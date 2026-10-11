@@ -16,7 +16,7 @@ for p in Path("openwrt/files").rglob("*"):
 for p in Path("openwrt/tests").glob("*.uc"):
     shutil.copyfile(p, root / "tests" / p.name)
 (root / "files/usr/share/vpn-controller").mkdir(parents=True, exist_ok=True)
-for name in ["core.uc", "platform.uc"]:
+for name in ["core.uc", "platform.uc", "egress.uc"]:
     shutil.copyfile(root / "usr/share/vpn-controller" / name, root / "files/usr/share/vpn-controller" / name)
 initial = root / "tmp/initial"
 initial.mkdir(exist_ok=True)
@@ -69,7 +69,7 @@ resources = [
             "restartable_interfaces": ["vpn_a"],
             "control_enabled": True,
             "exclusive_podkop_writer": True,
-            "lab_acceptance": "podkop-0.7.23-ipv4",
+            "lab_acceptance": "podkop-" + os.environ.get("PODKOP_TEST_VERSION", "0.7.24") + "-ipv4",
             "resources": resources,
             "vpns": {
                 v: {"approved": True, "egress_ips": [f"198.51.100.{2 + 4 * i}"]}
