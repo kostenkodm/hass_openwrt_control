@@ -29,7 +29,7 @@ text += """
 
 Отдельно выполнена демонстрация шести сценариев через HTTPS RPC: outputs/prototype/demo.html и demo.json.
 
-Это подтверждает локальную модель и HA-интеграцию. Загрузка опубликованного репозитория самим HACS и установка в HAOS пользователя не выполнялись. GitHub HACS workflow подготовлен, но ещё не запускался; это не отчёт официального валидатора HACS. Встроенная демонстрация останавливается вместе с HA; автономность production-контроллера остаётся отдельным требованием. Реальный OpenWrt/Podkop, egress, отсутствие утечек IPv4/IPv6, фактическая защита inbound_vpn, rpcd ACL на устройстве и отказоустойчивость flash не испытаны. Нативный OpenWrt-контроллер ещё не реализован.
+Это подтверждает локальную модель и HA-интеграцию. Загрузка опубликованного репозитория самим HACS и установка в HAOS пользователя не выполнялись. Официальный валидатор HACS запускается отдельно после публикации; актуальный результат доступен в [GitHub Actions](https://github.com/kostenkodm/hass_openwrt_control/actions/workflows/validate.yaml). Этот документ описывает локальный прогон, а не результат HACS. Встроенная демонстрация останавливается вместе с HA; автономность production-контроллера остаётся отдельным требованием. Реальный OpenWrt/Podkop, egress, отсутствие утечек IPv4/IPv6, фактическая защита inbound_vpn, rpcd ACL на устройстве и отказоустойчивость flash не испытаны. Нативный OpenWrt-контроллер ещё не реализован.
 
 Первичные API-референсы: [Config Flow](https://developers.home-assistant.io/docs/core/integration/config_flow/), [DataUpdateCoordinator](https://developers.home-assistant.io/docs/integration_fetching_data/), [runtime_data](https://developers.home-assistant.io/docs/core/integration-quality-scale/rules/runtime-data/).
 """
