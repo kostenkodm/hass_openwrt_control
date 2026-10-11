@@ -1,0 +1,38 @@
+{
+  "downloads": {
+    "rootfs.tar.gz": {
+      "url": "https://downloads.openwrt.org/releases/25.12.5/targets/x86/64/openwrt-25.12.5-x86-64-rootfs.tar.gz",
+      "sha256": "2dae4250b1b742062ed5787adcdc9dd6d26c7f69f94ced46548eb512d5957e8a"
+    },
+    "sing-box.tar.gz": {
+      "url": "https://github.com/SagerNet/sing-box/releases/download/v1.12.17/sing-box-1.12.17-linux-amd64.tar.gz",
+      "sha256": "5c6cc2e753afb34a6f38802697c8040bdf6a7f3694ea67db861c1e093754f898"
+    },
+    "openwrt-sdk-25.12.5-mediatek-mt7622_gcc-14.3.0_musl.Linux-x86_64.tar.zst": {
+      "url": "https://downloads.openwrt.org/releases/25.12.5/targets/mediatek/mt7622/openwrt-sdk-25.12.5-mediatek-mt7622_gcc-14.3.0_musl.Linux-x86_64.tar.zst",
+      "sha256": "0bd25a391256dbe9ad1f9c6f313364b1f9eddcc0e280c829d644034981ad8306"
+    }
+  },
+  "sources": {
+    "libubox": {
+      "url": "https://git.openwrt.org/project/libubox.git",
+      "commit": "da2d205a5cf3e877c45a2eec488218cbaf452e7d"
+    },
+    "ubus": {
+      "url": "https://git.openwrt.org/project/ubus.git",
+      "commit": "414c60a2e29e72c2c4f573bc50ad54aef076d169"
+    },
+    "uci": {
+      "url": "https://git.openwrt.org/project/uci.git",
+      "commit": "74f6277aabffc943d026f406df57c22595134c42"
+    },
+    "ucode": {
+      "url": "https://github.com/jow-/ucode.git",
+      "commit": "c69f9ea621f4c6d670c4e55a61e1e90ea62cf580"
+    }
+  },
+  "podkop": {
+    "url": "https://github.com/itdoginfo/podkop.git",
+    "commit": "c2ce4c32c72169272f1149961e9663755c8d4c9c"
+  }
+}

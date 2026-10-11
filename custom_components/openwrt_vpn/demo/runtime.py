@@ -52,7 +52,7 @@ class DemoRuntime:
             return
         self.lab.controller.fault = None
         for vpn, probe in self.lab.probes.items():
-            passed = scenario == "recover" or (scenario == "vpn_a_down" and vpn != "vpn_a")
+            passed = scenario == "recover" or (scenario == "vpn_a_down" and vpn != next(iter(self.lab.probes)))
             probe.update(successes=3 if passed else 0, egress=passed)
         for _ in range(self.lab.controller.data["settings"]["failure_cycles"]):
             self.lab.sample_and_tick()

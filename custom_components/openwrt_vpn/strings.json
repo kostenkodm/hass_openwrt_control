@@ -41,7 +41,7 @@
       },
       "demo": {
         "title": "Demonstration mode",
-        "description": "Creates 52 entities for three sections and three VPNs inside Home Assistant. All data and changes are simulated; no router is connected. Starts in observe mode with automation off. Open the integration device Demo to inspect entities; use integration options for failure and recovery scenarios. This demo runs only while HA is running."
+        "description": "Creates 55 entities for three sections and three VPNs inside Home Assistant. All data and changes are simulated; no router is connected. Starts in observe mode with automation off. Open the integration device Demo to inspect entities; use integration options for failure and recovery scenarios. This demo runs only while HA is running."
       }
     },
     "error": {
@@ -202,6 +202,9 @@
     "button": {
       "diagnose": {
         "name": "Diagnose VPN"
+      },
+      "restart_vpn": {
+        "name": "Restart {resource}"
       }
     }
   },

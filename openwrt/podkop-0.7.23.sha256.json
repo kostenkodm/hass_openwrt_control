@@ -1,0 +1,11 @@
+{
+  "usr/bin/podkop": "a23ac5e1644bf90465e273253d8edacf487b6db3356556a3d138114887f5aeb1",
+  "usr/lib/podkop/constants.sh": "96565cbf3ddf1ba2a0fb2ae21d18fd205c187cc6c0040f067c7f1fe6a568d270",
+  "usr/lib/podkop/helpers.sh": "90a05e8ccf97c3198949e8e14af3fb5bf64bc7a82551e905f8b5720d10d20b9e",
+  "usr/lib/podkop/logging.sh": "275d2d0564b3564e1cfa716a759182e1e8dbd47c83d13c473f06c2b153bfbfeb",
+  "usr/lib/podkop/nft.sh": "960a60628ed0d61bf9d59f1fb9334e72d7baecd3b460c65fe26970227fb5ecf2",
+  "usr/lib/podkop/rulesets.sh": "aa9ffcc84ff315c2e2547b047f19247ef097cea8a33c2539b997b3964c65b74e",
+  "usr/lib/podkop/sing_box_config_facade.sh": "84ad9d03cbea2499f8da32ec263e4e36cdfd8b7d8461ae16e8c6ac1b1bc857c9",
+  "usr/lib/podkop/sing_box_config_manager.sh": "1a64008ebfb2b6ba8fef359b5a77592cb0af3a9f789b26ed07bda9b3bc32fc1c",
+  "usr/lib/podkop/helpers.jq": "e1f9a431adc6de14793323eb26303b64380f93c0eda73441261448e74c8940a4"
+}

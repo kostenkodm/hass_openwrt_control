@@ -123,13 +123,17 @@ async def test_simulator_runs_without_any_ha_client(lab):
     p["mode"] = "auto"
     command(c, "set_policy", section_id="main", policy=p)
     command(c, "set_automation", enabled=True)
-    c.data["settings"]["probe_interval"] = .02  # accelerated internal laboratory clock
+    now = c.clock()
+    c.clock = lambda: now  # logical probe time; independent of filesystem latency
+    c.data["settings"]["probe_interval"] = .02  # accelerated cycle scheduling
     app = create_app(c, lab["credentials"], autonomous=True)
     laboratory = app[APP_KEY]
     laboratory.probes["vpn_a"] = {"successes": 0, "latency": 100, "egress": False}
     task = asyncio.create_task(laboratory.cycle())
     try:
-        await asyncio.sleep(.09)
+        async with asyncio.timeout(5):
+            while c.data["sections"]["main"]["applied_vpn"] != "vpn_b":
+                await asyncio.sleep(.02)
         assert c.data["sections"]["main"]["applied_vpn"] == "vpn_b"
     finally:
         task.cancel()
@@ -142,3 +146,50 @@ async def test_hostname_mismatch_rejected(lab_factory):
         client = UbusClient(session, lab["endpoint"], "hass", lab["credentials"]["password"], tls_context(lab["ca"]))
         with pytest.raises(ControllerError):
             await client.read("status")
+
+
+async def test_native_pending_operation_polls_without_replay(client, monkeypatch):
+    original = client._rpc
+    writes, polls = [], []
+
+    async def pending(sid, obj, method, args):
+        if method == "set_automation":
+            writes.append(args["request_id"])
+            await original(sid, obj, method, args)
+            return {"status": "pending", "request_id": args["request_id"]}
+        if method == "operation":
+            polls.append(args["request_id"])
+        return await original(sid, obj, method, args)
+
+    monkeypatch.setattr(client, "_rpc", pending)
+    result = await client.mutate("set_automation", {"enabled": True}, 0)
+    assert result["status"] == "completed"
+    assert writes == polls and len(writes) == 1
+
+
+async def test_native_rejected_operation_propagates_local_code(client, monkeypatch):
+    original = client._rpc
+
+    async def rejected(sid, obj, method, args):
+        if method == "set_automation":
+            return {"status": "pending"}
+        if method == "operation":
+            return {"status": "rejected", "error": {"code": "conflict"}}
+        return await original(sid, obj, method, args)
+
+    monkeypatch.setattr(client, "_rpc", rejected)
+    with pytest.raises(RemoteError) as err:
+        await client.mutate("set_automation", {"enabled": True}, 0)
+    assert err.value.code == "conflict"
+
+
+def test_protected_interfaces_come_from_each_controller():
+    import pytest
+    from custom_components.openwrt_vpn.api import ProtocolError, validate_snapshot
+    from custom_components.openwrt_vpn.demo.engine import Controller
+    snapshot = Controller().status()
+    snapshot["sections"]["main"]["applied_vpn"] = "private_inbound"
+    with pytest.raises(ProtocolError, match="Protected"):
+        validate_snapshot(snapshot, protected_interfaces=["private_inbound"])
+    # Another router can legitimately use the same name for an outgoing VPN.
+    assert validate_snapshot(snapshot, protected_interfaces=["other_inbound"]) is snapshot

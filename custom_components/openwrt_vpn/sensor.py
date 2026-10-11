@@ -18,7 +18,7 @@ class ControllerSensor(ControllerEntity, SensorEntity):
         elif key == "application_state":
             self._attr_device_class = SensorDeviceClass.ENUM
             self._attr_options = ["simulated", "pending", "pending_observe", "automation_paused",
-                                  "rolled_back", "recovery_required"]
+                                  "rolled_back", "recovery_required", "observed", "applied"]
         elif key == "latency_ms":
             self._attr_native_unit_of_measurement = "ms"
             self._attr_state_class = SensorStateClass.MEASUREMENT
@@ -47,7 +47,9 @@ class ControllerSensor(ControllerEntity, SensorEntity):
         if self.key == "history":
             attrs["events"] = self.coordinator.events
         if self.key in ("rx_bytes", "tx_bytes", "last_handshake"):
-            attrs["supported"] = not self.coordinator.capabilities.get("simulated")
+            attrs["supported"] = (not self.coordinator.capabilities.get("simulated")
+                                  and (self.key != "last_handshake"
+                                       or self.coordinator.capabilities.get("last_handshake") is True))
         return attrs
 
 

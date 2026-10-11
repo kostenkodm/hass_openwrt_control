@@ -1,0 +1,12 @@
+{
+  "control_enabled": false,
+  "exclusive_podkop_writer": false,
+  "lab_acceptance": "",
+  "vpns": {},
+  "resources": [],
+  "sections": {},
+  "protected_interfaces": [],
+  "source_interfaces": [],
+  "restart_enabled": false,
+  "restartable_interfaces": []
+}

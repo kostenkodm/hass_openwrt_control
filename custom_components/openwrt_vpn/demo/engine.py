@@ -13,7 +13,7 @@ import uuid
 
 PROTECTED = frozenset({"inbound_vpn"})
 READ_METHODS = frozenset({"capabilities", "status", "sections", "vpns", "history", "operation"})
-WRITE_METHODS = frozenset({"set_automation", "configure", "set_policy", "assign_vpn", "diagnose"})
+WRITE_METHODS = frozenset({"set_automation", "configure", "set_policy", "assign_vpn", "diagnose", "restart_vpn"})
 CHECKS = ("resource_a", "resource_b", "resource_c")
 
 
@@ -61,7 +61,7 @@ class Controller:
                 "settings": {"probe_interval": 60, "failure_cycles": 3,
                              "quorum": 2, "min_hold": 600},
                 "vpns": {v: {"id": v, "name": v, "protocol": "simulated_awg",
-                             "approved": True} for v in ids},
+                             "approved": True, "restart_allowed": True} for v in ids},
                 "sections": {
                     sid: {"id": sid, "name": sid, "connection_type": "vpn",
                           "policy": {"mode": "manual", "vpn": vpn, "candidates": ids[:],
@@ -75,6 +75,9 @@ class Controller:
                 "events": [], "operations": {}, "journal": None,
                 "recovery_required": False,
             }
+        # Additive upgrade from 0.1.x; retain IDs, policies and explicit local denials.
+        for vpn, meta in self.data["vpns"].items():
+            meta.setdefault("restart_allowed", meta.get("approved") is True and vpn not in PROTECTED)
         journal = self.data.get("journal")
         if journal and not self.data["recovery_required"]:
             for sid, old in journal["before"].items():
@@ -124,7 +127,7 @@ class Controller:
             "api_version": 1, "controller_id": self.data["controller_id"],
             "controller_kind": "simulator", "simulated": True,
             "safe_apply": False, "fail_closed_verified": False, "real_egress_verified": False,
-            "simulation_control": True, "production_control": False,
+            "simulation_control": True, "production_control": False, "vpn_restart": True,
             "section_endpoints": False, "protected_interfaces": sorted(PROTECTED),
             "read_methods": sorted(READ_METHODS), "write_methods": sorted(WRITE_METHODS),
         }
@@ -317,6 +320,7 @@ class Controller:
             "set_policy": {"section_id", "policy"},
             "assign_vpn": {"section_id", "vpn"},
             "diagnose": set(),
+            "restart_vpn": {"vpn"},
         }[method] | {"request_id", "expected_revision"}
         exact(args, keys)
         request_id = args["request_id"]
@@ -330,6 +334,11 @@ class Controller:
                 args["expected_revision"] == self.data["revision"],
                 "Configuration changed; refresh state", "conflict")
         require(not self.data["recovery_required"], "Recovery required", "recovery_required")
+        if method == "restart_vpn":
+            require(isinstance(args["vpn"], str) and args["vpn"] not in PROTECTED
+                    and self.data["vpns"].get(args["vpn"], {}).get("approved") is True
+                    and self.data["vpns"][args["vpn"]].get("restart_allowed") is True,
+                    "Restart is not permitted", "restart_forbidden")
         if method == "set_automation":
             require(type(args["enabled"]) is bool, "Invalid enabled")
         elif method == "configure":
@@ -377,7 +386,11 @@ class Controller:
             self.data["sections"][sid]["application_state"] = "pending"
             self._event("policy_changed", section_id=sid, mode=policy["mode"], request_id=request_id)
         self._persist()
-        outcome = self.tick(request_id)
+        if method == "restart_vpn":
+            self._event("vpn_restart_completed", vpn=args["vpn"], request_id=request_id, simulated=True)
+            outcome = "completed"
+        else:
+            outcome = self.tick(request_id)
         result = {"status": outcome, "request_id": request_id, "revision": self.data["revision"],
                   "digest": digest, "simulated": True}
         self.data["operations"][request_id] = result

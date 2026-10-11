@@ -263,3 +263,20 @@ def test_idle_ticks_do_not_rewrite_persistent_state(tmp_path):
     for _ in range(5):
         c.tick()
     assert c.path.stat().st_mtime_ns == modified
+
+
+def test_existing_demo_upgrades_restart_metadata_without_resetting_policies(tmp_path):
+    from copy import deepcopy
+    from custom_components.openwrt_vpn.demo.engine import Controller
+    path = tmp_path / "controller.json"
+    old = Controller(path)
+    for meta in old.data["vpns"].values():
+        meta.pop("restart_allowed", None)
+    old.data["vpns"]["vpn_b"]["restart_allowed"] = False
+    policies = deepcopy(old.data["sections"])
+    old._persist()
+    upgraded = Controller(path)
+    assert upgraded.data["sections"] == policies
+    assert upgraded.data["revision"] == old.data["revision"]
+    assert upgraded.data["vpns"]["vpn_a"]["restart_allowed"] is True
+    assert upgraded.data["vpns"]["vpn_b"]["restart_allowed"] is False

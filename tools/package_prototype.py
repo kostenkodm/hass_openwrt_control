@@ -7,7 +7,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = json.loads((ROOT / "custom_components/openwrt_vpn/manifest.json").read_text())["version"]
-OUT = ROOT / "outputs" / "prototype"
+OUT = ROOT / "outputs" / ("prototype" if VERSION == "0.1.0" else "podkop-" + VERSION)
 SOURCES = ["custom_components", "simulator", "tools", "tests", "docs", "openwrt", "examples", ".github"]
 ROOT_FILES = ["LICENSE", "README.md", ".gitignore", ".gitattributes", "hacs.json", "pyproject.toml", "requirements-dev.txt", "requirements-lock.txt"]
 
@@ -21,7 +21,9 @@ def public_files():
 
 
 def permitted(path):
-    return (path.name not in {"technical-specification.ru.md", "environment.ru.md"}
+    return (path.name not in {"technical-specification.ru.md", "environment.ru.md",
+                              "credentials.json", "ha-connection.json", "rpcd.fragment", "uhttpd.fragment",
+                              "controller.json", "config.local.json"}
             and not any(p in {"__pycache__", ".pytest_cache", ".ruff_cache"} for p in path.parts)
             and path.suffix not in {".pyc", ".pem", ".key"}
             and not path.name.startswith(".env"))

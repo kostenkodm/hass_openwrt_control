@@ -37,7 +37,8 @@ class ControllerCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         try:
-            snapshot = validate_snapshot(await self.client.read("status"), self.controller_id)
+            snapshot = validate_snapshot(await self.client.read("status"), self.controller_id,
+                                         self.capabilities.get("protected_interfaces", ()))
             if self.cursor is None:
                 self.cursor = snapshot["latest_event_id"]
                 await self.store.async_save({"cursor": self.cursor})
@@ -78,9 +79,21 @@ class ControllerCoordinator(DataUpdateCoordinator):
             self.connection_lost = True
 
     async def command(self, method, values):
-        if not (self.capabilities.get("simulated") is True
-                and self.capabilities.get("simulation_control") is True):
-            raise HomeAssistantError("This prototype permits commands only to the local simulator")
+        demo = (self.capabilities.get("simulated") is True
+                and self.capabilities.get("simulation_control") is True)
+        native = (self.capabilities.get("controller_kind") == "openwrt_ucode"
+                  and self.capabilities.get("simulated") is False
+                  and self.capabilities.get("policy_control") is True)
+        if not (demo or native):
+            raise HomeAssistantError("Controller does not support policy commands")
+        if method == "restart_vpn" and (
+            self.capabilities.get("vpn_restart") is not True
+            or values.get("vpn") in self.capabilities.get("protected_interfaces", ())
+            or self.data.get("vpns", {}).get(values.get("vpn"), {}).get("restart_allowed") is not True
+        ):
+            raise HomeAssistantError("Restart is not locally permitted for this outgoing VPN")
+        if method == "restart_vpn" and native and self.data.get("run_mode") != "control":
+            raise HomeAssistantError("VPN restart requires control mode")
         async with self.command_lock:
             await self.async_refresh()
             if not self.last_update_success:

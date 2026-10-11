@@ -132,8 +132,9 @@ class ControllerOptionsFlow(config_entries.OptionsFlow):
         errors = {}
         if user_input is not None:
             try:
-                if user_input["run_mode"] == "control" and not c.capabilities.get("simulation_control"):
-                    raise HomeAssistantError("Production control is not available in this prototype")
+                if user_input["run_mode"] == "control" and not (c.capabilities.get("simulation_control") or c.capabilities.get("production_control")
+                        or c.capabilities.get("experimental_control")):
+                    raise HomeAssistantError("Control is disabled by the controller local preflight")
                 await c.command("configure", {k: user_input[k] for k in (
                     "run_mode", "probe_interval", "failure_cycles", "quorum", "min_hold")})
                 return self.async_create_entry(title="", data={"poll_interval": user_input["poll_interval"]})
@@ -144,7 +145,7 @@ class ControllerOptionsFlow(config_entries.OptionsFlow):
             vol.Required("poll_interval", default=self.config_entry.options.get("poll_interval", 30)):
                 vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
             vol.Required("probe_interval", default=settings["probe_interval"]):
-                vol.All(vol.Coerce(int), vol.Range(min=1, max=3600)),
+                vol.All(vol.Coerce(int), vol.Range(min=60, max=3600)),
             vol.Required("failure_cycles", default=settings["failure_cycles"]):
                 vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
             vol.Required("quorum", default=settings["quorum"]): vol.In([2, 3]),

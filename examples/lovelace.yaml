@@ -107,6 +107,8 @@ views:
       name: HTTP-проверка
     - entity: sensor.openwrt_vpn_controller_vpn_a_external_ip
       name: Внешний IP (смоделирован)
+    - entity: button.openwrt_vpn_controller_restart_vpn_a
+      name: Перезапустить VPN (в Demo смоделировано)
   - type: entities
     title: vpn_b
     show_header_toggle: false
@@ -121,6 +123,8 @@ views:
       name: HTTP-проверка
     - entity: sensor.openwrt_vpn_controller_vpn_b_external_ip
       name: Внешний IP (смоделирован)
+    - entity: button.openwrt_vpn_controller_restart_vpn_b
+      name: Перезапустить VPN (в Demo смоделировано)
   - type: entities
     title: vpn_c
     show_header_toggle: false
@@ -135,6 +139,8 @@ views:
       name: HTTP-проверка
     - entity: sensor.openwrt_vpn_controller_vpn_c_external_ip
       name: Внешний IP (смоделирован)
+    - entity: button.openwrt_vpn_controller_restart_vpn_c
+      name: Перезапустить VPN (в Demo смоделировано)
 - title: История и ограничения
   path: details
   icon: mdi:history
@@ -152,8 +158,8 @@ views:
       - История решений находится в атрибутах сущности «Последние события».
 
 
-      Проверки реального выхода, отсутствие утечек и транзакции настоящего Podkop
-      ещё требуют нативного OpenWrt-контроллера и отдельного стенда.'
+      Демонстрация не проверяет реальный выход. Прототип 0.2.0 имеет отдельный экспериментальный
+      нативный OpenWrt-контроллер; production-приёмка остаётся отдельным этапом.'
   - type: entities
     title: Службы и история
     entities:

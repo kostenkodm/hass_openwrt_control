@@ -13,3 +13,11 @@ __pycache__/
 # Private source requirements and router inventory stay local.
 /docs/technical-specification.ru.md
 /docs/environment.ru.md
+
+# Generated access profiles and local controller state.
+credentials.json
+ha-connection.json
+rpcd.fragment
+uhttpd.fragment
+controller.json
+config.local.json

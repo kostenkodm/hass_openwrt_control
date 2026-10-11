@@ -54,7 +54,7 @@ def validate_endpoint(endpoint):
     return endpoint.rstrip("/")
 
 
-def validate_snapshot(data, controller_id=None):
+def validate_snapshot(data, controller_id=None, protected_interfaces=()):
     if not isinstance(data, dict) or data.get("api_version") != 1:
         raise ProtocolError("Unsupported controller snapshot")
     if not isinstance(data.get("controller_id"), str) or not data["controller_id"]:
@@ -63,16 +63,17 @@ def validate_snapshot(data, controller_id=None):
         raise ProtocolError("Controller identity changed")
     if type(data.get("revision")) is not int or type(data.get("latest_event_id")) is not int:
         raise ProtocolError("Invalid snapshot revision")
+    protected = frozenset(protected_interfaces)
     for key in ("sections", "vpns"):
         if not isinstance(data.get(key), dict):
             raise ProtocolError(f"Invalid {key}")
         for ident, resource in data[key].items():
-            if not isinstance(resource, dict) or resource.get("id") != ident or ident == "inbound_vpn":
+            if not isinstance(resource, dict) or resource.get("id") != ident or (key == "vpns" and ident in protected):
                 raise ProtocolError("Invalid or protected resource in snapshot")
     for section in data["sections"].values():
         if section.get("connection_type") != "vpn" or not isinstance(section.get("policy"), dict):
             raise ProtocolError("Invalid managed section")
-        if section.get("applied_vpn") == "inbound_vpn":
+        if section.get("applied_vpn") in protected:
             raise ProtocolError("Protected interface was assigned")
     return data
 
@@ -117,6 +118,9 @@ class UbusClient:
                 or type(payload.get("id")) is not int or payload["id"] != ident):
             raise ProtocolError("RPC response does not match request")
         if "error" in payload:
+            error = payload["error"]
+            if isinstance(error, dict) and type(error.get("code")) is int and error["code"] in (-32001, -32002):
+                raise AuthenticationError("RPC session expired or permission denied")
             raise ProtocolError("JSON-RPC error")
         result = payload.get("result")
         if not isinstance(result, list) or len(result) not in (1, 2) or type(result[0]) is not int:
@@ -171,7 +175,7 @@ class UbusClient:
         request_id = str(uuid.uuid4())
         args = {**values, "request_id": request_id, "expected_revision": revision}
         try:
-            return await self._rpc(self._sid, OBJECT, method, args)
+            outcome = await self._rpc(self._sid, OBJECT, method, args)
         except (AuthenticationError, RemoteError):
             raise
         except ControllerError as err:
@@ -181,8 +185,29 @@ class UbusClient:
             except ControllerError:
                 raise OutcomeUnknown(request_id) from err
             if isinstance(outcome, dict) and outcome.get("status") != "unknown":
-                return outcome
+                return await self._finish_operation(outcome, request_id)
             raise OutcomeUnknown(request_id) from err
+        return await self._finish_operation(outcome, request_id)
+
+    async def _finish_operation(self, outcome, request_id):
+        # Poll the durable operation, never replay a mutation. Probes/rendering
+        # run in the native worker, so HTTP reads remain responsive.
+        deadline = time.monotonic() + 180
+        while isinstance(outcome, dict) and outcome.get("status") == "pending":
+            if time.monotonic() >= deadline:
+                raise OutcomeUnknown(request_id)
+            await asyncio.sleep(1)
+            try:
+                outcome = await self.read("operation", {"request_id": request_id})
+            except ControllerError as err:
+                raise OutcomeUnknown(request_id) from err
+            if not isinstance(outcome, dict) or outcome.get("status") == "unknown":
+                raise OutcomeUnknown(request_id)
+        if isinstance(outcome, dict) and outcome.get("status") == "rejected":
+            error = outcome.get("error", {})
+            code = error.get("code", "rejected") if isinstance(error, dict) else "rejected"
+            raise RemoteError(code, "Controller rejected the operation")
+        return outcome
 
     async def close(self):
         if self._sid:

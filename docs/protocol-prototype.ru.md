@@ -15,6 +15,7 @@ session.login получает username/password, возвращает ubus_rpc_
 | capabilities, status, sections, vpns | нет | read |
 | history | after: целочисленный курсор | read |
 | operation | request_id | read |
+| restart_vpn | vpn; request_id, expected_revision; локальное разрешение OpenWrt | write |
 | set_automation | enabled: bool | write |
 | configure | run_mode, probe_interval, failure_cycles, quorum, min_hold | write |
 | set_policy | section_id, policy | write |
@@ -30,3 +31,5 @@ Desired policy, applied_vpn и proposed_vpn разделены. completed в obs
 Нет универсальных uci.get/set, file.exec, rc.init, service.*, network.interface.* и system.reboot. inbound_vpn отсутствует среди исходящих ресурсов и отклоняется при назначении. Создание и удаление секций через RPC отсутствует.
 
 Отдельный /_lab — локальная инъекция отказов с другим случайным lab_token, не часть интерфейса HA. Реальная сторона rpcd/ucode ещё не реализована; инъекция ubus_rpc_session шлюзом uhttpd будет проверяться при разработке нативного адаптера.
+
+Имена `vpn_a`, `vpn_b`, `vpn_c`, `inbound_vpn` — условные примеры. Реальные имена и защищённые интерфейсы передаются отдельным контроллером; в коде HA нет привязки к конкретному роутеру.

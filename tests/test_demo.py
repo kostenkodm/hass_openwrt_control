@@ -48,7 +48,7 @@ async def test_hacs_demo_flow_entities_tls_and_no_entry_secrets(hass):
     assert c.demo.client_context.verify_mode == ssl.CERT_REQUIRED
     assert c.demo.client_context.check_hostname is True
     entities = [e for e in er.async_get(hass).entities.values() if e.config_entry_id == entry.entry_id]
-    assert len(entities) == 52
+    assert len(entities) == 55
     assert all(hass.states.get(e.entity_id) is not None for e in entities)
     assert all(hass.states.get(e.entity_id).attributes["simulated"] for e in entities)
     device = dr.async_get(hass).async_get_device_by_identifier((DOMAIN, entry.unique_id), entry.entry_id)

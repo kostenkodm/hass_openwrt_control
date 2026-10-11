@@ -29,7 +29,7 @@ async def test_config_flow_all_platforms_and_policy_control(hass, lab):
     entry = await add_controller(hass, lab)
     c = entry.runtime_data
     entities = [e for e in er.async_get(hass).entities.values() if e.config_entry_id == entry.entry_id]
-    assert len(entities) == 52
+    assert len(entities) == 55
     assert {e.domain for e in entities} == {"sensor", "binary_sensor", "select", "switch", "button"}
     assert not any("inbound_vpn" in e.unique_id for e in entities)
     import json
@@ -186,7 +186,7 @@ async def test_concurrent_commands_and_immediate_snapshot(hass, lab):
     assert c.data["automation"] is False
 
 
-async def test_prototype_blocks_commands_to_non_simulated_backend(hass, lab, monkeypatch):
+async def test_blocks_commands_to_unsupported_backend(hass, lab, monkeypatch):
     import pytest
     from homeassistant.exceptions import HomeAssistantError
     entry = await add_controller(hass, lab)
@@ -196,7 +196,7 @@ async def test_prototype_blocks_commands_to_non_simulated_backend(hass, lab, mon
     async def forbidden(*args, **kwargs):
         raise AssertionError("A write must not be sent")
     monkeypatch.setattr(coordinator.client, "mutate", forbidden)
-    with pytest.raises(HomeAssistantError, match="only to the local simulator"):
+    with pytest.raises(HomeAssistantError, match="does not support policy commands"):
         await coordinator.command("set_automation", {"enabled": True})
     assert lab["engine"].data["automation"] is False
 
@@ -216,3 +216,43 @@ async def test_observe_exposes_proposed_assignment_without_changing_other_sectio
     mode = entity_id(hass, entry, "sensor", "controller", "controller", "run_mode")
     assert hass.states.get(mode).attributes["device_class"] == "enum"
     assert lab["engine"].data["automation"] is False
+
+
+async def test_native_policy_capability_allows_observe_commands(hass, lab):
+    entry = await add_controller(hass, lab)
+    c = entry.runtime_data
+    c.capabilities = {**c.capabilities, "controller_kind": "openwrt_ucode",
+                      "simulated": False, "simulation_control": False,
+                      "policy_control": True, "production_control": False}
+    await c.command("set_automation", {"enabled": True})
+    assert c.data["automation"] is True
+    sensor = entity_id(hass, entry, "sensor", "vpns", "vpn_a", "last_handshake")
+    assert hass.states.get(sensor).attributes["supported"] is False
+    button = entity_id(hass, entry, "button", "vpns", "vpn_a", "restart_vpn")
+    assert hass.states.get(button).state == "unavailable"
+    import pytest
+    from homeassistant.exceptions import HomeAssistantError
+    with pytest.raises(HomeAssistantError, match="requires control"):
+        await c.command("restart_vpn", {"vpn": "vpn_a"})
+
+
+async def test_restart_button_preserves_policies_and_local_permissions(hass, lab):
+    import pytest
+    from homeassistant.exceptions import HomeAssistantError
+    entry = await add_controller(hass, lab)
+    c = entry.runtime_data
+    button = entity_id(hass, entry, "button", "vpns", "vpn_a", "restart_vpn")
+    assert button and hass.states.get(button).state != "unavailable"
+    before = deepcopy(c.data["sections"])
+    await hass.services.async_call("button", "press", {"entity_id": button}, blocking=True)
+    assert c.data["sections"] == before
+    assert lab["engine"].data["events"][-1]["type"] == "vpn_restart_completed"
+    assert lab["engine"].data["events"][-1]["simulated"] is True
+    lab["engine"].data["vpns"]["vpn_a"]["restart_allowed"] = False
+    await c.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get(button).state == "unavailable"
+    revision = c.data["revision"]
+    with pytest.raises(HomeAssistantError, match="not locally permitted"):
+        await c.command("restart_vpn", {"vpn": "vpn_a"})
+    assert lab["engine"].data["revision"] == revision
