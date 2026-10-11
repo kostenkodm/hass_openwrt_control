@@ -1,0 +1,13 @@
+/work/
+/outputs/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+__pycache__/
+.pytest_cache/
+
+# Private source requirements and router inventory stay local.
+/docs/technical-specification.ru.md
+/docs/environment.ru.md
